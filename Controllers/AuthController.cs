@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Authentication.Entities;
 using Authentication.Models;
 using Authentication2.Models;
+using Authentication.NewFolder;
 
 namespace ProjekatRS2.Controllers
 {
@@ -30,12 +31,16 @@ namespace ProjekatRS2.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
+            if (!MlbValidator.IsValidJMBG(model.Mlb))
+            {
+                return BadRequest("Invalid Mlb (JMBG) format.");
+            }
             var user = new User { UserName = model.Email, Email = model.Email, mlb = model.Mlb, name = model.Name, surname = model.Surname };
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
-                return Ok(new { Message = "Korisnik uspešno registrovan" });
+                return Ok(new { Message = "User successfully registered" });
             }
 
             return BadRequest(result.Errors);
@@ -74,5 +79,37 @@ namespace ProjekatRS2.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+
+
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
+        {
+           
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+            {
+                return BadRequest("User not found with the provided email.");
+            }
+
+           
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                return BadRequest("New password and confirm password do not match");
+            }
+
+     
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok("Password changed successfully!");
+        }
+
     }
+
 }

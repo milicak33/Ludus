@@ -22,7 +22,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "ProjekatRS2 API",
         Version = "v1",
-        Description = "API dokumentacija ProjekatRS2"
+        Description = "API documentation ProjekatRS2"
     });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -32,7 +32,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Unesi JWT token kao: Bearer {token}"
+        Description = "Enter the JWT token as: Bearer {token}"
     });
 
     var securityRequirement = new OpenApiSecurityRequirement
@@ -75,13 +75,14 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ClockSkew = TimeSpan.Zero
     };
 });
 
 var app = builder.Build();
 
-// Middleware
+
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>

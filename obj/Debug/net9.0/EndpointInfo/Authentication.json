@@ -2,7 +2,7 @@
   "openapi": "3.0.4",
   "info": {
     "title": "ProjekatRS2 API",
-    "description": "API dokumentacija ProjekatRS2",
+    "description": "API documentation ProjekatRS2",
     "version": "v1"
   },
   "paths": {
@@ -67,10 +67,75 @@
           }
         }
       }
+    },
+    "/api/Auth/change-password": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Test/names": {
+      "get": {
+        "tags": [
+          "Test"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ChangePasswordModel": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "oldPassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "newPassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmPassword": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginModel": {
         "required": [
           "email",
@@ -136,7 +201,7 @@
     "securitySchemes": {
       "Bearer": {
         "type": "http",
-        "description": "Unesi JWT token kao: Bearer {token}",
+        "description": "Enter the JWT token as: Bearer {token}",
         "scheme": "Bearer",
         "bearerFormat": "JWT"
       }

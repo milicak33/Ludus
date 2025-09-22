@@ -12,7 +12,7 @@ public class MatchmakingController : ControllerBase
     private readonly JoinQueueHandler _joinQueueHandler = new();
 
     [HttpPost("join")]
-    public IActionResult Join([FromBody] JoinRequest payload)  
+    public IActionResult Join([FromBody] JoinRequest payload)
     {
         var result = _joinQueueHandler.Handle(payload.PlayerId, payload.Rating);
         return Ok(new { message = result });
@@ -21,6 +21,16 @@ public class MatchmakingController : ControllerBase
     [HttpGet("status/{playerId}")]
     public IActionResult Status(string playerId)
     {
-        return Ok(new { status = "searching" });
+        var status = JoinQueueHandler.GetPlayerStatus(playerId);
+        return Ok(new { status });
     }
+
+    
+    [HttpGet("queue")]
+    public IActionResult Queue()
+    {
+        var snapshot = _joinQueueHandler.GetQueueSnapshot();
+        return Ok(snapshot.Select(p => new { p.PlayerId, p.Rating }));
+    }
+
 }

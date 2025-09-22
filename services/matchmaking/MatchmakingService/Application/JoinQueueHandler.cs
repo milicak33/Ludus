@@ -23,6 +23,30 @@ public class JoinQueueHandler
         }
     }
 
+    public List<PlayerInQueue> GetQueueSnapshot()
+    {
+        lock (_lock)
+        {
+        return Queue.ToList(); // vraća kopiju da ne diramo originalnu listu
+        }
+    }
+
+    public static string GetPlayerStatus(string playerId)
+    {
+        lock (_lock)
+        {   
+            if (Queue.Any(p => p.PlayerId == playerId))
+                return "searching";
+
+            if (Matches.Any(m => m.Players.Any(p => p.PlayerId == playerId)))
+                return "matched";
+
+            return "not_found";
+        }
+    }
+
+
+
     private void TryFormMatch()
     {
         if (Queue.Count >= 2)

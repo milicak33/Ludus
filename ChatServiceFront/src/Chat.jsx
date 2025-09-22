@@ -1,13 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
 import axios from "axios";
+import {
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Typography,
+  Stack,
+} from "@mui/material";
 
 const Chat = () => {
   const [connection, setConnection] = useState(null);
   const [messages, setMessages] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [usernameInput, setUsernameInput] = useState("");
   const [user, setUser] = useState("");
   const [message, setMessage] = useState("");
+  const chatEndRef = useRef(null);
 
   const API_URL = "https://localhost:5001/api/chat";
   const HUB_URL = "https://localhost:5001/chathub";
@@ -25,16 +35,15 @@ const Chat = () => {
     });
 
     connect.on("UpdateUserList", (users) => {
-      setOnlineUsers(users);
+      setOnlineUsers(users); 
     });
+
 
     connect.start()
       .then(() => setConnection(connect))
       .catch((err) => console.error("SignalR error:", err));
 
-    return () => {
-      connect.stop();
-    };
+    return () => connect.stop();
   }, [user]);
 
   useEffect(() => {
@@ -43,10 +52,18 @@ const Chat = () => {
       .catch((err) => console.error("Error fetching messages:", err));
   }, []);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleLogin = () => {
+    if (usernameInput.trim()) setUser(usernameInput.trim());
+  };
+
   const sendMessage = async () => {
-    if (connection && user && message) {
+    if (connection && user && message.trim()) {
       try {
-        await connection.invoke("SendMessage", user, message);
+        await connection.invoke("SendMessage", user, message.trim());
         setMessage("");
       } catch (err) {
         console.error("Error sending message:", err);
@@ -54,51 +71,174 @@ const Chat = () => {
     }
   };
 
+  if (!user) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        sx={{ bgcolor: "linear-gradient(135deg, #e0e7ff, #f0f4ff)" }}
+      >
+        <Paper sx={{ p: 4, minWidth: 300, textAlign: "center" }}>
+          <Typography variant="h5" color="primary" mb={2}>
+            Welcome to Chat
+          </Typography>
+          <TextField
+            label="Your Name"
+            fullWidth
+            value={usernameInput}
+            onChange={(e) => setUsernameInput(e.target.value)}
+            margin="normal"
+          />
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+            onClick={handleLogin}
+          >
+            Join Chat
+          </Button>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
-    <div className="p-4 max-w-lg mx-auto bg-white shadow-md rounded-xl">
-      <h1 className="text-xl font-bold mb-4">Chat</h1>
+    <Box display="flex" height="100vh" sx={{ bgcolor: "grey.100" }}>
+      {/* Sidebar Online Users */}
+      <Box
+        width={250}
+        p={2}
+        sx={{
+          bgcolor: "white",
+          boxShadow: 3,
+          borderRadius: 2,
+          borderRight: "1px solid #ddd",
+        }}
+      >
+        <Typography variant="h6" mb={2} color="primary">
+          Online Users
+        </Typography>
+        <Stack spacing={1}>
+          {onlineUsers.length === 0 ? (
+            <Typography color="text.secondary">No users online</Typography>
+          ) : (
+            onlineUsers.map((u, idx) => (
+              <Paper
+                key={idx}
+                sx={{
+                  p: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  bgcolor: "#e3f2fd",
+                  borderRadius: 2,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    bgcolor: "green",
+                    mr: 1.5,
+                  }}
+                />
+                <Typography>{u}</Typography>
+              </Paper>
+            ))
+          )}
+        </Stack>
+      </Box>
 
-      <input
-        type="text"
-        placeholder="Your name..."
-        value={user}
-        onChange={(e) => setUser(e.target.value)}
-        className="border p-2 w-full mb-2 rounded"
-      />
-
-      <div className="mb-2 p-2 bg-gray-100 rounded">
-        <strong>Online users:</strong>{" "}
-        {onlineUsers.length === 0 ? "None" : onlineUsers.join(", ")}
-      </div>
-
-      <div className="border h-64 overflow-y-auto p-2 mb-2 rounded bg-gray-50">
-        {messages.map((m, idx) => (
-          <div key={idx} className="mb-1">
-            <span className="font-semibold">{m.sender}: </span>
-            <span>{m.text}</span>
-            <span className="text-xs text-gray-500 ml-2">
-              ({new Date(m.timestamp).toLocaleTimeString()})
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex">
-        <input
-          type="text"
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="border p-2 flex-grow rounded-l"
-        />
-        <button
-          onClick={sendMessage}
-          className="bg-blue-500 text-white px-4 rounded-r"
+      {/* Chat Area */}
+      <Box flex={1} display="flex" flexDirection="column">
+        {/* Messages */}
+        <Box
+          flex={1}
+          overflow="auto"
+          p={2}
+          sx={{
+            background: "linear-gradient(to bottom, #f0f4ff, #e0e7ff)",
+          }}
         >
-          Send
-        </button>
-      </div>
-    </div>
+          <Stack spacing={2}>
+            {messages.map((m, idx) => {
+              const isOwn = m.sender === user;
+              return (
+                <Box
+                  key={idx}
+                  display="flex"
+                  justifyContent={isOwn ? "flex-end" : "flex-start"}
+                >
+                  <Paper
+                    sx={{
+                      px: 3, // horizontal padding
+                      py: 1.5, // vertical padding
+                      maxWidth: "70%",
+                      bgcolor: isOwn ? "primary.main" : "grey.200",
+                      color: isOwn ? "white" : "black",
+                      borderRadius: 3,
+                      borderTopRightRadius: isOwn ? 0 : 3,
+                      borderTopLeftRadius: isOwn ? 3 : 0,
+                      position: "relative",
+                      boxShadow: 2,
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        width: 0,
+                        height: 0,
+                        borderStyle: "solid",
+                        borderWidth: isOwn ? "10px 0 10px 10px" : "10px 10px 10px 0",
+                        borderColor: isOwn
+                          ? `transparent transparent transparent ${"#3f51b5"}`
+                          : `transparent ${"#e0e0e0"} transparent transparent`,
+                        top: 12,
+                        right: isOwn ? -10 : "auto",
+                        left: isOwn ? "auto" : -10,
+                      },
+                    }}
+                  >
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {m.sender}
+                    </Typography>
+                    <Typography>{m.text}</Typography>
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      textAlign="right"
+                    >
+                      {new Date(m.timestamp).toLocaleTimeString()}
+                    </Typography>
+                  </Paper>
+                </Box>
+              );
+            })}
+            <div ref={chatEndRef} />
+          </Stack>
+        </Box>
+
+        {/* Input bar */}
+        <Box p={2} display="flex" gap={1} sx={{ bgcolor: "white" }}>
+          <TextField
+            fullWidth
+            placeholder="Type your message..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ px: 4 }}
+            onClick={sendMessage}
+          >
+            Send
+          </Button>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

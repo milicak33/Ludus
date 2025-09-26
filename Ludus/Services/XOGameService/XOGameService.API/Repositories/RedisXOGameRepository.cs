@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
+using XOGameService.API.Models;
 
 namespace XOGameService.API.Repositories
 {
@@ -9,6 +11,48 @@ namespace XOGameService.API.Repositories
         public RedisXOGameRepository(IDistributedCache distributedCache)
         {
             _distributedCache = distributedCache ?? throw new ArgumentNullException(nameof(distributedCache));
+        }
+
+        private static string Key(string gameId) => $"game:{gameId}";
+
+        public async Task<GameState?> GetAsync(string gameId, CancellationToken ct = default)
+        {
+            var json = await _distributedCache.GetStringAsync(Key(gameId), ct);
+            return string.IsNullOrEmpty(json)
+                ? null
+                : JsonConvert.DeserializeObject<GameState>(json);
+        }
+
+        public async Task CreateAsync(GameState gameState, CancellationToken ct = default)
+        {
+            var json = JsonConvert.SerializeObject(gameState);
+            await _distributedCache.SetStringAsync(
+                Key(gameState.GameId),
+                json,
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+                },
+                ct);
+        }
+
+        public async Task<bool> TryUpdateAsync(GameState newState, int expectedVersion, CancellationToken ct = default)
+        {
+            var currentGame = await GetAsync(newState.GameId, ct);
+
+            if (currentGame == null) return false;
+            if (currentGame.Version != expectedVersion) return false;
+
+            var json = JsonConvert.SerializeObject(newState);
+            await _distributedCache.SetStringAsync(
+                Key(newState.GameId),
+                json,
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+                },
+                ct);
+            return true;
         }
     }
 }

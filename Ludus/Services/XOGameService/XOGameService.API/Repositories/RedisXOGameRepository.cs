@@ -15,15 +15,15 @@ namespace XOGameService.API.Repositories
 
         private static string Key(string gameId) => $"game:{gameId}";
 
-        public async Task<GameState?> GetAsync(string gameId, CancellationToken ct = default)
+        public async Task<GameState?> GetAsync(string gameId)
         {
-            var json = await _distributedCache.GetStringAsync(Key(gameId), ct);
+            var json = await _distributedCache.GetStringAsync(Key(gameId));
             return string.IsNullOrEmpty(json)
                 ? null
                 : JsonConvert.DeserializeObject<GameState>(json);
         }
 
-        public async Task CreateAsync(GameState gameState, CancellationToken ct = default)
+        public async Task CreateAsync(GameState gameState)
         {
             var json = JsonConvert.SerializeObject(gameState);
             await _distributedCache.SetStringAsync(
@@ -32,13 +32,12 @@ namespace XOGameService.API.Repositories
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
-                },
-                ct);
+                });
         }
 
-        public async Task<bool> TryUpdateAsync(GameState newState, int expectedVersion, CancellationToken ct = default)
+        public async Task<bool> TryUpdateAsync(GameState newState, int expectedVersion)
         {
-            var currentGame = await GetAsync(newState.GameId, ct);
+            var currentGame = await GetAsync(newState.GameId);
 
             if (currentGame == null) return false;
             if (currentGame.Version != expectedVersion) return false;
@@ -50,8 +49,7 @@ namespace XOGameService.API.Repositories
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
-                },
-                ct);
+                });
             return true;
         }
     }

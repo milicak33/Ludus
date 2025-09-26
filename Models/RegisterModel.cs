@@ -25,5 +25,6 @@ namespace Authentication2.Models
 
         [Required]
         public string Surname { get; set; }
+        public bool Enable2FA { get; internal set; } = true;
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using ProjekatRS2.Data;
 using Authentication.Entities;
 using System.Text;
+using Authentication.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,10 +57,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<User, IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -80,16 +77,57 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-var app = builder.Build();
-
-
-
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProjekatRS2 API v1");
-    c.RoutePrefix = string.Empty;
-});
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 1;
+
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+
+    // Sign-in settings
+    options.SignIn.RequireConfirmedEmail = true;
+    options.SignIn.RequireConfirmedPhoneNumber = false;
+
+    // User settings
+    options.User.RequireUniqueEmail = true;
+    options.User.AllowedUserNameCharacters =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+
+    // Two-Factor token provider settings (ako želiš da prilagodiš)
+    // Ovo obično ne moraš menjati osim ako hoćeš drugačiji provider/tip
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
+// ...
+// nakon što dodaš Identity i konfiguracije Jwt, DbContext itd.
+
+// Registruj tvoj email sender servis:
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+// Registruj korisnički repository
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Registruj servis za 2FA
+builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
+
+
+
+var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 
 
 app.UseHttpsRedirection();

@@ -142,3 +142,6 @@ C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\obj\Debug\net9.0\Authenticati
 C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\obj\Debug\net9.0\ref\Authentication.dll
 C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\obj\Debug\net9.0\Authentication.sourcelink.json
+C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
+C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\bin\Debug\net9.0\MailKit.dll
+C:\Users\milaj\Desktop\rs2\ProjekatRS2\ProjekatRS2\bin\Debug\net9.0\MimeKit.dll
